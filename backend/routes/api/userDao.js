@@ -1,5 +1,3 @@
-const express = require('express');
-const router = express.Router();
 
 const connection = require('../../config/db');
 
@@ -18,13 +16,10 @@ exports.chkUserDuplicated = (req, res) => {
 };
 
 exports.addUser = (req, res) => {
-    console.log(req);
-    const { userId, password, userName } = req.body;
-    console.log(req.query);
-    console.log(userId, password, userName);
+    const { userId, password, userNm } = req.body;
     const sql = 'INSERT INTO TB_USER VALUES (?, ?, ?, NULL, NOW())'
     connection.query(sql, [
-        userId, password, userName
+        userId, password, userNm
     ], (err, result) => {
         if(err) throw err;
 
@@ -34,3 +29,28 @@ exports.addUser = (req, res) => {
         });
     });
 };
+
+exports.login = (req, res) => {
+    const { userId, password } = req.body;
+    const sql = 'SELECT USER_ID AS userId, USER_NM AS userNm FROM TB_USER WHERE USER_ID=? AND USER_PW=?';
+    connection.query(sql, [
+        userId, password
+    ], (err, result) => {
+        if(err) throw err;
+
+        if(result.length > 0){
+            res.send({
+                success: true,
+                response: result
+            });
+        }else{
+            res.send({
+                success: false,
+                response: {
+                    errorCode: 401,
+                    message: '이메일 혹은 비밀번호가 일치하지 않습니다.',
+                },
+            });
+        }
+    });
+}

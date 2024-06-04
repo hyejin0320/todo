@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=Hahmlet:wght@100..900&family=Noto+Sans+KR:wght@100..900&display=swap');
 
 html, body, #app{
     width: 100%;
@@ -18,7 +20,9 @@ html, body, button, input, ul, li, p{
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
+    padding-top: 168px;
+    height: calc(100% - 168px);
+    overflow: hidden;
 
     &.login{
         
@@ -36,6 +40,7 @@ html, body, button, input, ul, li, p{
 .flex-row{
     display: flex;
     flex-direction: row;
+    align-items: center;
     gap: 10px;
 }
 
@@ -171,5 +176,47 @@ button.btn{
             // color: #1d72f2;
             background-color: rgba(255, 255, 255, .2);
         }
+    }
+}
+
+.input_checkbox{
+    cursor: pointer;
+
+    > input[type=checkbox]{
+        display: none;
+
+        &:checked{
+            content: '';
+            width:10px;
+            height: 10px;
+            background-color: #fff;
+
+            &+i::before{
+                content: '';
+                width: 12px;
+                height: 12px;
+                border-radius: 10px;
+                background-color: #fff;
+                position: relative;
+                top:4px;
+                left: 4px;
+                display: block;
+            }
+        }
+    }
+
+    > i{
+        cursor: pointer;
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 1px solid #fff;
+        border-radius: 20px;
+        background-color: transparent;
+    }
+
+    > span{
+        color: #fff;
+        font-size: 14px;
     }
 }

@@ -1,49 +1,49 @@
 <template lang="">
     <div class="wrapper login">
-        //
-        {{newUserId}}
-        //
-        <LoginForm :newUserId="isChangedUserId"></LoginForm>
+        <LoginForm></LoginForm>
         <v-snackbar
-        :timeout="1000"
-        v-model="isShowSnackbar">
-            계정이 등록되었습니다.
+        v-model="isShowSnackbar"
+        :timeout="3000"
+        >
+            회원가입이 완료되었습니다.
             <template v-slot:actions>
-                <v-btn variant="text" @click="isShowSnackbar=false">Close</v-btn>
+                <v-btn variant="text" @click="setHidden">Close</v-btn>
             </template>
         </v-snackbar>
     </div>
 </template>
 <script>
 import LoginForm from '@/components/LoginForm.vue';
+import { getSession, deleteSession } from '@/utils/session';
 export default {
     components:{
         LoginForm,
     },
     data(){
         return{
-            newUserId: '123',
             isShowSnackbar: false,
         }
     },
-    computed:{
-        isChangedUserId(){
-            console.log(this.newUserId);
-            return this.newUserId ? this.newUserId : '';
+    watch:{
+        isShowSnackbar(oldVal, newVal){
+            if(newVal === false){
+                deleteSession('isAfterCreateAccount');
+            }
         }
     },
-    mounted() {
-        const setUserId = (userId) => {
-            console.log(userId);
-            this.newUserId = userId;
-            console.log(this.newUserId)
-            this.emitter.off('signupCompleted', setUserId);
-        };
-
-        this.emitter.on('signupCompleted', setUserId);
+    methods: {
+        setHidden(){
+            this.isShowSnackbar = false;
+        },
     },
+    mounted(){
+        const isAfterCreateAccount = getSession('isAfterCreateAccount');
+        if(isAfterCreateAccount) this.isShowSnackbar = isAfterCreateAccount;
+    }
 }
 </script>
 <style lang="scss">
-    
+      html{
+        background-color: #058FFF;
+    }
 </style>

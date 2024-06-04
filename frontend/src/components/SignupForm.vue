@@ -17,7 +17,7 @@
             </div>
             <div>
                 <label>
-                    <input type="text" v-model="userName" placeholder="이름" class="input_box_type_1">
+                    <input type="text" v-model="userNm" placeholder="이름" class="input_box_type_1">
                 </label>
             </div>
             <div>
@@ -40,11 +40,12 @@
 </template>
 <script>
 import { validationEmail } from '@/utils/validations';
+import { setSession } from '@/utils/session';
 export default {
     data(){
         return{
             userId: '',
-            userName: '',
+            userNm: '',
             password: '',
             passwordSeen: false,
             isChkedDupl: false,
@@ -63,7 +64,7 @@ export default {
             return this.isValidUserId() && !this.isChkedDupl ? false : true;
         },
         isValid(){
-            return this.userId !== '' && this.userName !== '' && this.password !== '' && this.isChkedDupl ? false : true;
+            return this.userId !== '' && this.userNm !== '' && this.password !== '' && this.isChkedDupl ? false : true;
         },
     },
     watch:{
@@ -93,14 +94,15 @@ export default {
         submitSignup(){
             const userData = {
                 userId: this.userId,
-                userName: this.userName,
+                userNm: this.userNm,
                 password: this.password,
             }
             this.$axios.post('http://localhost:3000/api/user/add',
                 userData
             ).then((res) => {
                 if(res.data.success){
-                    this.emitter.emit('signupCompleted', this.userId);
+                    setSession('userId', this.userId);
+                    setSession('isAfterCreateAccount', true);
                     this.$router.go(-1);
                 }
             }).catch((err) => {
@@ -114,11 +116,6 @@ export default {
 }
 </script>
 <style lang="scss">
-
-    html{
-        background-color: #3988ff;
-    }
-
     .chk_btn{
         width: unset !important;
         padding: 10px 20px !important;

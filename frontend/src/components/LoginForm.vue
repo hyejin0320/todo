@@ -1,7 +1,6 @@
 <template lang="">
     <div>
-        아무값 : {{newUserId}}
-        <form @submit.prevent="" class="flex-column">
+        <form @submit.prevent="submitForm" class="flex-column">
             <div class="logo flex-column">
                 <p class="">TALK TODO</p>
             </div>
@@ -12,25 +11,28 @@
                 <input title="비밀번호" :type="pwType" placeholder="비밀번호" v-model="password" class="input_box_type_1"/>
                 <v-icon class="input_inner_icon" :icon="isSeenPw" @click="togglePwSeen"></v-icon>
             </label>
-            <button type="submit" @click="signIn" class="btn btn_type_1">접속</button>
-            <button type="submit" @click="signUp" class="btn btn_type_2">계정 등록</button>
+            <button type="submit" class="btn btn_type_1" :disabled="isDisabled">접속</button>
+            <button type="button" @click="signUp" class="btn btn_type_2">계정 등록</button>
         </form>
+        <div class="flex-row remember_id_checkbox">
+            <label class="flex-row input_checkbox">
+                <input type="checkbox" v-model="saveId">
+                <i></i>
+                <span>ID 기억하기</span>
+            </label>
+        </div>
     </div>
 </template>
 <script>
+import { getSession } from '@/utils/session';
+import { validationEmail } from '@/utils/validations';
 export default {
-    props: {
-        newUserId: {
-            type: String,
-            default: '아무값이나..',
-            required: false,
-        }
-    },
     data(){
         return{
-            userId: this.newUserId,
+            userId: getSession('isAfterCreateAccount') ? getSession('userId') : '',
             password: '',
             passwordSeen: false,
+            saveId: false,
         }
     },
     computed:{
@@ -39,16 +41,14 @@ export default {
         },
         pwType(){
             return this.passwordSeen ? 'text' : 'password';
+        },
+        isDisabled(){
+            return this.isValidUserId() && this.password !== '' ? false : true;
         }
     },
     methods:{
         togglePwSeen(){
             this.passwordSeen = !this.passwordSeen;
-        },
-        signIn(){
-            this.userId = this.newUserId;
-            console.log(this.newUserId, this.userId)
-            alert('signIn');
         },
         signUp(){
             this.$router.push('/signup');
@@ -60,17 +60,24 @@ export default {
                     password: this.password,
                 };
 
-                await this.$store.dispatch('LOGIN', userData);
-                this.$router.push('/group/list');
+                await this.$store.dispatch('login', userData);
+                this.$router.push('/group');
             }catch(error){
                 console.log(error);
             }
-        }
+        },
+        isValidUserId(){
+            return this.userId && validationEmail(this.userId);
+        },
+    },
+    mounted(){
+        const isAfterCreateAccount = getSession('isAfterCreateAccount');
+        if(isAfterCreateAccount) this.userId = getSession('userId');
     }
 }
 </script>
 <style lang="scss">
-    html{
-        background-color: #3988ff;
+    .remember_id_checkbox{
+        margin-top: 20px;
     }
 </style>

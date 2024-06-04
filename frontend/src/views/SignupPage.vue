@@ -21,5 +21,7 @@ export default {
 }
 </script>
 <style lang="scss">
-    
+      html{
+        background-color: #058FFF;
+    }
 </style>
