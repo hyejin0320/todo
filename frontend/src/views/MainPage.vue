@@ -1,7 +1,7 @@
 <template lang="">
     <AppHeader></AppHeader>
     <div class="index_list">
-        <GroupList></GroupList>
+        <GroupList :groupList="groupList" @modGroup="modGroup"></GroupList>
     </div>
     <div class="wrapper">
         <ul class="todo_list">
@@ -9,42 +9,56 @@
         </ul>
         <div class="member_list" @click="addTodo">MEMBER</div>
         <div class="btn_add_todo" @click="addTodo">CREATE NEW TODO</div>
+
+        <v-card class="mod_modal" :class="{activated: modGroupModal}" v-if="modGroupModal">
+            <v-toolbar title="Opening from the Bottom"></v-toolbar>
+    
+            <v-card-text class="text-h2 pa-12">
+            Hello world!
+            </v-card-text>
+    
+            <v-card-actions class="justify-end">
+            <v-btn
+                text="Close"
+            ></v-btn>
+            </v-card-actions>
+        </v-card>
     </div>
 </template>
 <script>
 import AppHeader from '@/components/common/AppHeader.vue';
 import GroupList from '@/components/GroupList.vue';
-import TodoItem from '@/components/TodoItem';
-import { getSession } from '@/utils/session';
+import TodoItem from '@/components/TodoItem.vue';
 export default {
     components: {
         AppHeader,
         GroupList,
-        TodoItem
+        TodoItem,
     },
     data(){
         return{
             todoList: [],
+            groupList: [],
+            modGroupModal: false,
         }
     },
     methods:{
         addTodo(){
             
+        },
+        modGroup(key){
+            console.log(key)
+            this.modGroupModal = true;
+        }
+    },
+    wtach: {
+        todoList(oldVal, newVal){
+            console.log(oldVal, newVal);
+            return newVal;
         }
     },
     created(){
-        const url = '/api/group/list';
-        this.$axios(url, {
-            params: {
-                userId: getSession('userId'),
-            },
-        }).then((res) => {
-            if(res.data.scccess){
-                this.todoList = res.data.todoList;
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
+        
     },
     mounted(){
         for(var i=0;i<20;i++){
@@ -71,6 +85,10 @@ export default {
         overflow-y: hidden;
         top: 100px;
 
+        &::-webkit-scrollbar{
+            display: none;
+        }
+
         ul{
             display: flex;
             width: 100%;
@@ -83,12 +101,13 @@ export default {
                 color:#fff;
                 font-weight: bold;
                 font-size: 18px;
+                padding: 0px 20px;
                 border-radius: 10px 10px 0px 0px;
                 background-color: #058FFF;
 
                 position: relative;
                 bottom: -24px;
-                width: 200px;
+                min-width: 160px;
                 height:36px;
 
                 cursor: pointer;
@@ -114,8 +133,18 @@ export default {
                 &.btn_add_group{
                     background-color: #1450C7;
                 }
+
+                p{
+                    overflow: hidden;
+                    text-overflow:ellipsis;
+                    white-space:nowrap;
+                }
             }
         }
+    }
+
+    .btn_mod_group{
+        margin-left: 10px;
     }
 
     .btn_add_todo{
@@ -200,6 +229,21 @@ export default {
 
         &::-webkit-scrollbar{
             display: none;
+        }
+    }
+
+    .mod_modal{
+        z-index: 110;
+        position: absolute;
+        width:800px;
+        height:1200px;
+        box-shadow: 10px 10px rgba(0,0,0,.5);
+        transform: translateY(1000px) rotate(0deg);
+        transition-property: transform;
+        transition-duration: .4s;
+
+        &.activated{
+            transform: translateY(280px) rotate(2deg);
         }
     }
 </style>

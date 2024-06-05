@@ -92,14 +92,11 @@ export default {
             });
         },
         submitSignup(){
-            const userData = {
+            this.$axios.post('http://localhost:3000/api/user/add', {
                 userId: this.userId,
                 userNm: this.userNm,
                 password: this.password,
-            }
-            this.$axios.post('http://localhost:3000/api/user/add',
-                userData
-            ).then((res) => {
+            }).then((res) => {
                 if(res.data.success){
                     setSession('userId', this.userId);
                     setSession('isAfterCreateAccount', true);
