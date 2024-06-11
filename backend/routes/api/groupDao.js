@@ -13,7 +13,7 @@ exports.addGroup = (req, res) => {
         }else{
             res.send({
                 success: false,
-                response: '그룹을 추가할 수 없습니다.',
+                response: '1:그룹을 추가할 수 없습니다.',
             })
         }
     });
@@ -24,14 +24,15 @@ function getLastInsertedGroupSeq(req, res){
     const sql = 'SELECT GRP_SEQ FROM TB_GRP WHERE USER_ID=? ORDER BY REG_DT DESC LIMIT 1';
     connection.query(sql, [
         userId
-    ], (err, result) => {
+    ], async (err, result) => {
         if(err) throw err;
 
         const userGrpRelData = {
             userId: userId,
             grpSeq: result[0].GRP_SEQ,
         };
-        if(insertUserGrpRel(userGrpRelData, res)){
+
+        if(await insertUserGrpRel(userGrpRelData)){
             res.send({
                 success: true,
                 response: result[0].GRP_SEQ,
@@ -39,28 +40,28 @@ function getLastInsertedGroupSeq(req, res){
         }else{
             res.send({
                 success: false,
-                response: '그룹을 추가할 수 없습니다.',
+                response: '2:그룹을 추가할 수 없습니다.',
             });
         }
     });
 }
 
-function insertUserGrpRel(req, res){
-    const { userId, grpSeq } = req;
-    const sql = 'INSERT INTO TB_USER_GRP_REL(USER_ID, GRP_SEQ) VALUES(?,?)'
-    connection.query(sql, [
-        userId, grpSeq
-    ], (err, result) => {
-        if(err) throw err;
-
-        return result.affectedRows > 0;
+function insertUserGrpRel(req){
+    return new Promise((resolve, reject) => {
+        const { userId, grpSeq } = req;
+        const sql = 'INSERT INTO TB_USER_GRP_REL(USER_ID, GRP_SEQ) VALUES(?,?)'
+        connection.query(sql, [
+            userId, grpSeq
+        ], (err, result) => {
+            if(err) return reject(err);
+    
+            resolve(result.affectedRows > 0);
+        });
     });
 }
 
 exports.getGroupList = (req, res) => {
-    console.log(req.query)
     const { userId } = req.query;
-    console.log(userId)
     const sql = 'SELECT GRP.GRP_SEQ AS `key`, GRP.GRP_ICON AS grpIcon, GRP.GRP_NM AS grpNm, GRP.COLOR_TAG AS grpColor,  "false" AS selected FROM TB_GRP GRP INNER JOIN TB_USER_GRP_REL REL ON GRP.GRP_SEQ = REL.GRP_SEQ WHERE REL.USER_ID=?';
     connection.query(sql, [
         userId
@@ -73,6 +74,107 @@ exports.getGroupList = (req, res) => {
             response: {
                 groupList: result,
             }
+        });
+    });
+}
+
+exports.getGroupDetail = (req, res) => {
+    const { grpSeq } = req.query;
+    const sql = 'SELECT * FROM TB_GRP WHERE GRP_SEQ=?';
+
+    connection.query(sql, [
+        grpSeq
+    ], (err, result) => {
+        if(err) throw err;
+
+        const target = result[0];
+
+        res.send({
+            success: true,
+            grpSeq: target.GRP_SEQ,
+            grpNm: target.GRP_NM,
+            regId: target.USER_ID,
+            grpColor: target.COLOR_TAG,
+            grpIcon: target.GRP_ICON,
+            regDt: target.REG_DT,
+        });
+    });
+}
+
+exports.setGroupDetail = (req, res) => {
+    const { grpSeq, grpNm, grpColor } = req.body;
+    const sql = 'UPDATE TB_GRP SET GRP_NM=?, COLOR_TAG=? WHERE GRP_SEQ=?';
+    console.log(grpColor)
+
+    connection.query(sql, [
+        grpNm, grpColor, grpSeq
+    ], (err, result) => {
+        if(err) throw err;
+
+        if(result.affectedRows > 0){
+            res.send({
+                success: true,
+            })
+        }else{
+            res.send({
+                success: false,
+                response: '그룹 내용을 변경할 수 없습니다.',
+            })
+        }
+    });
+}
+
+exports.removeGroup = async (req, res) => {
+    const { grpSeq } = req.body;
+
+    if(await getGroupLength(grpSeq)){
+        const sql = 'DELETE FROM TB_GRP WHERE GRP_SEQ=?';
+        connection.query(sql, [
+            grpSeq
+        ], (err, result) => {
+            if(err) throw err;
+    
+            if(result.affectedRows > 0 && removeUserGrpRel(grpSeq)){
+                res.send({
+                    success: true,
+                    message: '그룹을 삭제했습니다.',
+                 });
+            }else{
+                res.send({
+                   success: false,
+                   message: '그룹을 삭제할 수 없습니다.',
+                });
+            }
+        });
+    }else{
+        res.send({
+            success: false,
+            message: '마지막 그룹은 지울 수 없습니다.',
+        });
+    }
+};
+
+function getGroupLength(grpSeq){
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT COUNT(GRP_SEQ) AS CNT FROM TB_GRP WHERE GRP_SEQ != ?';
+        connection.query(sql, [
+            grpSeq
+        ], (err, result) => {
+            if(err) return reject(err);
+            resolve(result[0].CNT > 1);
+        });
+    });
+};
+
+function removeUserGrpRel(grpSeq){
+    return new Promise((resolve, reject) => {
+        const sql = 'DELETE FROM TB_USER_GRP_REL WHERE GRP_SEQ=?'
+        connection.query(sql, [
+            grpSeq
+        ], (err, result) => {
+            if(err) return reject(err);
+    
+            resolve(result.affectedRows > 0);
         });
     });
 }

@@ -11,4 +11,16 @@ function getRandomColor(expectColor){
     }
 }
 
-export { getRandomColor };
+function getColorSet(color){
+    let newArr = [];
+    colorSet.forEach((elem) => {
+        newArr.push({
+            color: elem,
+            activated: elem === color,
+        });
+    });
+
+    return newArr;
+}
+
+export { getRandomColor, getColorSet };

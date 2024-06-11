@@ -1,6 +1,13 @@
 <template lang="">
     <ul>
-        <GroupItem v-for="group in groupList" :grpItem="group" :key="group.key" @selectedItem="selectedItem"  @modGroup="modGroup"></GroupItem>
+        <GroupItem 
+            v-for="group in groupList" 
+            :grpItem="group" 
+            :key="group.key" 
+            @selectedItem="selectedItem"  
+            @openModGroupModal="openModGroupModal" 
+            @openDelGroupModal="openDelGroupModal"
+        ></GroupItem>
         <GroupItem :grpItem="addBtn" :key="1" @selectedItem="selectedItem" ref="addBtn"></GroupItem>
     </ul>
 </template>
@@ -32,16 +39,11 @@ export default {
             ],
             addBtn: {
                 key: -1,
-                grpColor: '#94afc5',
+                grpColor: '#94AFC5',
                 grpNm: '새 그룹',
                 grpIcon: 'plus',
                 selected: false,
             },
-        }
-    },
-    watch: {
-        groupList(oldVal, newVal){
-            console.log(oldVal, newVal);
         }
     },
     methods: {
@@ -62,15 +64,12 @@ export default {
 
                     this.addBtn.grpColor = getRandomColor(this.addBtn.grpColor);
                     this.addBtn.selected = false;
-
-                    console.log(key)
                     key = newGrpSeq;
                     console.log(key)
                 }
             }
 
             //그룹 선택 처리
-            console.log(this.groupList)
             console.log(key)
             const selectedIndex = this.groupList.findIndex(item => item.key === key);
             this.groupList[selectedIndex].selected = true;
@@ -78,6 +77,8 @@ export default {
             const result = this.groupList.filter(item => item.key === key);
             const bgColor = result[0].grpColor;
             document.body.style.backgroundColor = bgColor;
+
+            this.$emit('getTodoList', key);
         },
         async addGroup(newGroupData){
             try{
@@ -87,10 +88,11 @@ export default {
                     userId: getSession('userId')
                 });
 
+                console.log(res.data.success);
+
                 if(res.data.success){
-                    return res.data.response[0].GRP_SEQ;
+                    return res.data.response;
                 }else{
-                    alert(res.data.response);
                     return null;
                 }
             }catch(err){
@@ -98,8 +100,11 @@ export default {
                 return null;
             }
         },
-        modGroup(key){
-            this.$emit('modGroup', key);
+        openModGroupModal(key){
+            this.$emit('openModGroupModal', key);
+        },
+        openDelGroupModal(key){
+            this.$emit('openDelGroupModal', key);
         },
         getGroupList(){
             const url = '/api/group/list';
@@ -112,11 +117,22 @@ export default {
                     let groupList = res.data.response.groupList;
                     groupList[0].selected = true;
                     this.groupList = groupList;
+                    this.selectedItem(groupList[0].key);
                 }
             }).catch((err) => {
                 console.error(err);
             });
         },
+        setGroupItem(grpSeq, grpNm, grpColor){
+            const targetIndex = this.groupList.findIndex(item => item.key === grpSeq);
+            if(grpNm) this.groupList[targetIndex].grpNm = grpNm;
+            if(grpColor) this.groupList[targetIndex].grpColor = grpColor;
+        },
+        delGroupItem(grpSeq){
+            const targetIndex = this.groupList.findIndex(item => item.key === grpSeq);
+            this.groupList.splice(targetIndex, 1);
+            this.selectedItem(this.groupList[0].key);
+        }
     },
     mounted(){
         this.getGroupList();

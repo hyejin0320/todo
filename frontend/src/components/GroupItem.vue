@@ -1,10 +1,11 @@
 <template lang="">
     <li :style="{'background-color': grpColor}" :class="{selected: grpItem.selected === true}" @click="openGroup">
-        <v-icon :icon="iconNm" size="small"></v-icon>
+        <v-icon v-if="iconNm !== '' && iconNm !== null" :icon="iconNm" size="small"></v-icon>
         <p>
             {{grpItem.grpNm}}
         </p>
-        <v-icon v-if="grpItem.key !== -1" icon="mdi-pencil" size="small" class="btn_mod_group" @click="modGroup"></v-icon>
+        <v-icon v-if="grpItem.key !== -1" icon="mdi-pencil" size="small" class="btn_mod_group" @click="openModGroupModal"></v-icon>
+        <v-icon v-if="grpItem.key !== -1" icon="mdi-trash-can-outline" size="small" class="btn_mod_group" @click="openDelGroupModal"></v-icon>
     </li>
 </template>
 <script>
@@ -37,8 +38,11 @@ export default {
         openGroup(){
             this.$emit('selectedItem', this.grpItem.key);
         },
-        modGroup(){
-            this.$emit('modGroup', this.grpItem.key);
+        openModGroupModal(){
+            this.$emit('openModGroupModal', this.grpItem.key);
+        },
+        openDelGroupModal(){
+            this.$emit('openDelGroupModal', this.grpItem.key);
         },
     },
     mounted() {
@@ -50,5 +54,7 @@ export default {
 }
 </script>
 <style lang="scss">
-    /*  */
+    .btn_mod_group{
+        
+    }
 </style>
