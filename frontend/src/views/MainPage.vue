@@ -9,13 +9,22 @@
         ></GroupList>
     </div>
     <div class="wrapper">
-        <ul class="todo_list">
-            <TodoItem v-for="todo in todoList" :key="todo.key" :todoItem="todo"></TodoItem>
+        <ul class="todo_list" ref="todoList">
+            <TodoItem 
+                v-for="todo in todoList" 
+                :key="todo.key" 
+                :todoItem="todo" 
+                @setTodoItem="setTodoItem" 
+                @delTodoItem="delTodoItem"
+                ref="todoItem"
+            ></TodoItem>
         </ul>
-        <div class="member_list" @click="addTodo">MEMBER</div>
-        <div class="btn_add_todo" @click="addTodo">CREATE NEW TODO</div>
+        <div class="member_list">MEMBER</div>
+        <div class="btn_add_todo"
+            @click="addTodo"
+        >CREATE NEW TODO</div>
 
-        <div class="mod_modal" :class="{activated: modGroupModal}">
+        <div class="mod_modal group_modal" :class="{activated: modGroupModal}">
             <div class="mod_modal_color_set">
                 <label 
                     v-for="color in colorList"
@@ -34,17 +43,12 @@
                     </span>
                 </div>
             </div>
-            <!-- <div class="mod_modal_btns left">
-                <button class="btn_delete" type="button">
-                    <v-icon class="btn_delete_icon" icon="mdi-delete-circle-outline" size="x-large"></v-icon>
-                </button>
-            </div> -->
             <div class="mod_modal_btns right">
                 <button class="btn_no" type="button" @click="closeModGroupModal">안 바꿈</button>
                 <button class="btn_yes" type="button" @click="modGroup">바꿈</button>
             </div>
         </div>
-        <div class="del_modal" :class="{activated: delGroupModal}">
+        <div class="del_modal group_modal" :class="{activated: delGroupModal}">
             <div class="del_modal_title">
                 CAUTION
             </div>
@@ -70,6 +74,7 @@
 import AppHeader from '@/components/common/AppHeader.vue';
 import GroupList from '@/components/GroupList.vue';
 import TodoItem from '@/components/TodoItem.vue';
+import { getSession } from '@/utils/session.js';
 import { getColorSet } from '@/utils/colorSet';
 export default {
     components: {
@@ -96,9 +101,6 @@ export default {
         }
     },
     methods:{
-        addTodo(){
-            
-        },
         async openModGroupModal(key){
             this.modGroupModal = true;
 
@@ -183,9 +185,12 @@ export default {
             if(this.alertModal) this.closeAlertModal();
         },
         async getTodoList(key){
+            this.grpSeq = key;
             try{
                 const res = await this.$axios.get('/api/todo/list', {
-                    grpSeq: key,
+                    params:{
+                        grpSeq: key,
+                    },
                 });
 
                 if(res.data.success){
@@ -197,6 +202,31 @@ export default {
                 console.error(err);
             }
         },
+        async addTodo(){
+            try{
+                const res = await this.$axios.post('/api/todo/add', {
+                    userId: getSession('userId'),
+                    grpSeq: this.grpSeq,
+                });
+
+                if(res.data.success){
+                    this.todoList.unshift(res.data.todoInfo);
+                }else{
+                    this.alertModal = true;
+                    this.alertModalContent = res.data.message;
+                }
+            }catch(err){
+                console.error(err);
+            }
+        },
+        setTodoItem(todoSeq, todoText){
+            const todoIndex = this.todoList.findIndex(item => item.key === todoSeq);
+            this.todoList[todoIndex].text = todoText;
+        },
+        delTodoItem(todoSeq){
+            const todoIndex = this.todoList.findIndex(item => item.key === todoSeq);
+            this.todoList.splice(todoIndex, 1);
+        },
         changeBgColor(color){
             const beforeColorIndex = this.colorList.findIndex(item => item.activated === true);
             const afterColorIndex = this.colorList.findIndex(item => item.color === color);
@@ -205,18 +235,18 @@ export default {
             document.body.style.backgroundColor = color;
             this.$refs.groupListComponent.setGroupItem(this.grpSeq, null, color);
         },
+        handleScroll(){
+            this.$refs.todoItem.forEach(elem => {
+                elem.rootTodoRotate = -20;
+            })
+            // this.$refs.todoItem.style.transform = `rotate('-20deg')`;
+        }
     },
     created(){
         
     },
     mounted(){
-        // for(var i=0;i<20;i++){
-        //     this.todoList.push({
-        //         key: i,
-        //         text: i+': 글자 수마다 종이 길이를 다르게 하기 ',
-        //         regDt: '2024-06-04 00:00 (화)',
-        //     });
-        // }
+        this.$refs.todoList.addEventListener('scroll', this.handleScroll);
     }
 }
 </script>
@@ -301,7 +331,7 @@ export default {
         position: absolute;
         bottom: -30px;
         right: 80px;
-        z-index: 100;
+        z-index: 120;
         align-self:flex-end;
 
         width: 500px;
@@ -320,8 +350,8 @@ export default {
         font-size:40px;
         transform: rotate(3deg);
 
-        transition: all;
-        transition-duration: .1s;
+        transition: transform .1s, bottom .1s, visibility 0s linear .3s;
+
         transition-timing-function:ease-in-out;
 
         cursor: pointer;
@@ -683,17 +713,21 @@ export default {
 
     .modal_bg{
         z-index: 109;
+        display: none;
         position: absolute;
         width: 100%;
         height: 100%;
         top:0px;
         left: 0px;
-        display: none;
+        background-color: #000;
         opacity: 0;
+
+        transition: opacity .3s linear 1s;
+        transition-timing-function:ease-in-out;
 
         &.activated{
             display: block;
-            opacity: 1;
+            opacity: .3;
             /* backdrop-filter: blur(2px); */ /*눈 피로감이 심각해서 사용할 수 없음..*/
         }
     }

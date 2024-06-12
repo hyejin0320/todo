@@ -16,5 +16,8 @@ router.post('/api/group/modify', groupDao.setGroupDetail);
 router.post('/api/group/delete', groupDao.removeGroup);
 
 router.get('/api/todo/list', todoDao.getTodoList);
+router.post('/api/todo/add', todoDao.addTodo);
+router.post('/api/todo/delete', todoDao.removeTodoItem);
+router.post('/api/todo/modify', todoDao.setTodoItem);
 
 module.exports = router;
