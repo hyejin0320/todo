@@ -2,13 +2,19 @@
     <li class="todo_item" :key="todoItem.key" :style="{transform: 'rotate('+rootTodoRotate+'deg)'}">
         <!-- 핀 랜덤 배치.. -->
         <!-- <label class="chk_pin" :style="{left: randomDistance(0, 200)+'px', top: randomDistance(-60, -40)+'px'}"> -->
-        <div class="category_tag" :style="{transform: 'rotate('+categoryTagRotate+'deg)'}">
+        <div draggable="true"
+            class="category_tag" 
+            :style="{transform: 'rotate('+categoryTagRotate+'deg)'}" 
+            v-if="todoItem.category"
+            @dragstart="categoryTagDragStartEvent($event)"
+            @dragend="categoryTagDragEndEvent($event)"
+        >
             <div class="category_tag_content">
                 <div class="category_tag_text">
                     {{todoItem.category}}
                 </div>
                 <div class="category_tag_color">
-
+                    
                 </div>
             </div>
         </div>
@@ -61,7 +67,8 @@ export default {
     data(){
         return{
             todoSeq: this.todoItem.key,
-            rootTodoRotate: this.randomDeg(4),
+            // rootTodoRotate: this.randomDeg(4),
+            rootTodoRotate: 0,
             categoryTagRotate: this.randomDeg(2),
             chkPinDistance: this.randomDistance(110, 130),
             nameTagRotate: this.randomDeg(4),
@@ -126,12 +133,25 @@ export default {
 
             this.toggleMode();
         },
+        categoryTagDragStartEvent(e){
+            e.target.classList.add('isMoved');
+        },
+        categoryTagDragEndEvent(e){
+            // console.dir(e)
+            console.log('offset: ', e.offsetX, e.offsetY)
+            console.log('page: ', e.pageX, e.pageY)
+            console.log('screen: ', e.screenX, e.screenY)
+            // if((e.offsetX > 50 || e.offsetX < -77) && (e.offsetY > 100|| e.offsetY < 100))
+            e.target.classList.remove('isMoved');
+        }
     }
 }
 </script>
 <style lang="scss">
     .todo_item{
+        display: inline-block;
         background-color: #fff;
+        margin-left: 100px;
         padding: 40px;
         min-width: 240px;
         width: 240px;
@@ -141,10 +161,6 @@ export default {
         box-shadow: 10px 10px rgba(0,0,0, .3);
         transition-property: transform;
         transition-duration: .2s;
-
-        &:nth-child(1){
-            margin-left: 100px;
-        }
 
         &:nth-last-child(1){
             margin-right: 100px;
@@ -270,18 +286,20 @@ export default {
             height: 174px;
             overflow: hidden;
             overflow-wrap: anywhere;
+            cursor: text;
         }
 
         &.write_mode{
             font-family: "Gowun Dodum", sans-serif;
             font-size: 20px;
             position:relative;
-            top: 54px;
-            left:0px;
-            width: 100%;
+            top: 51px;
+            left:-3px;
+            width: calc(100% + 10px);
             height: 174px;
             resize: none;
             overflow: hidden;
+            box-sizing: border-box;
 
             &:focus{
                 outline: none;
@@ -345,6 +363,7 @@ export default {
                 border: 1px solid #ff4949;
                 height: 32px;
                 width: 122px;
+                pointer-events: none;
             }
         }
         
@@ -380,10 +399,15 @@ export default {
         border-radius: 6px;
         transform: rotate(10deg);
 
+        &.isMoved{
+            opacity: .5;
+        }
+
         .category_tag_content{
             width: 100%;
             display: flex;
             flex-direction: row;
+            cursor: pointer;
 
             .category_tag_text{
                 display: flex;

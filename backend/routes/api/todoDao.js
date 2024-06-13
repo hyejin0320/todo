@@ -43,7 +43,7 @@ exports.addTodo = (req, res) => {
 
 function getTodoDeatil(todoSeq){
     return new Promise((resolve, reject) => {
-        const sql = 'SELECT * FROM TB_TODO WHERE TODO_SEQ=?';
+        const sql = 'SELECT GRP_SEQ AS grpSeq, REG_DT AS regDt, TODO_COLOR AS bgColor, TODO_ISCOMP AS isComp, TODO_SEQ AS `key`, TODO_TEXT AS text, CHECKOUT_LINE AS chkoutLine, TODO_CATEGORY AS category, USER_ID AS userId FROM TB_TODO WHERE TODO_SEQ=?';
         connection.query(sql, [
             todoSeq
         ], (err, result) => {
@@ -109,4 +109,17 @@ exports.setTodoItem = (req, res) => {
             });
         }
     })
+};
+
+exports.removeAllTodoItem = (grpSeq) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'DELETE FROM TB_TODO WHERE GRP_SEQ=?';
+        connection.query(sql, [
+            grpSeq
+        ], (err, result) => {
+            if(err) throw err;
+    
+            resolve(result.affectedRows > 0);
+        });
+    });
 };

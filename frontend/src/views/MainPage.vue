@@ -9,7 +9,7 @@
         ></GroupList>
     </div>
     <div class="wrapper">
-        <ul class="todo_list" ref="todoList">
+        <transition-group :name="transitionNm" tag="ul" class="todo_list" @scroll="handleScroll">
             <TodoItem 
                 v-for="todo in todoList" 
                 :key="todo.key" 
@@ -18,7 +18,7 @@
                 @delTodoItem="delTodoItem"
                 ref="todoItem"
             ></TodoItem>
-        </ul>
+        </transition-group>
         <div class="member_list">MEMBER</div>
         <div class="btn_add_todo"
             @click="addTodo"
@@ -93,6 +93,9 @@ export default {
             delGroupModal: false,
             alertModal: false,
             alertModalContent: '',
+            scrollTimeOut: null,
+            prevScrollLeft: 0,
+            transitionNm: 'upDown',
         }
     },
     computed: {
@@ -184,7 +187,9 @@ export default {
             if(this.delGroupModal) this.closeDelGroupModal();
             if(this.alertModal) this.closeAlertModal();
         },
-        async getTodoList(key){
+        async getTodoList(key, transitionNm){
+            this.transitionNm = transitionNm;
+            console.log(transitionNm+': \n'+ new Date)
             this.grpSeq = key;
             try{
                 const res = await this.$axios.get('/api/todo/list', {
@@ -195,6 +200,10 @@ export default {
 
                 if(res.data.success){
                     this.todoList = res.data.todoList;
+                    this.$nextTick(()=>{
+                        this.transitionNm = 'fade';
+                        console.log('fade: \n'+ new Date)
+                    });
                 }else{
                     console.log(res.data.message);
                 }
@@ -235,18 +244,35 @@ export default {
             document.body.style.backgroundColor = color;
             this.$refs.groupListComponent.setGroupItem(this.grpSeq, null, color);
         },
-        handleScroll(){
+        handleScroll(e){
+            const scrollLeft =  e.target.scrollLeft;
+            console.log(scrollLeft, e.target.scrollWidth)
+            let scrollRotate = 0;
+            if(this.prevScrollLeft < scrollLeft) scrollRotate = -10;
+            else scrollRotate = 10;
+
             this.$refs.todoItem.forEach(elem => {
-                elem.rootTodoRotate = -20;
-            })
-            // this.$refs.todoItem.style.transform = `rotate('-20deg')`;
+                elem.rootTodoRotate = scrollRotate;
+            });
+
+            this.prevScrollLeft = scrollLeft;
+
+            if(this.scrollTimeOut){
+                clearTimeout(this.scrollTimeOut);
+            }
+
+            this.scrollTimeOut = setTimeout(() => {
+                this.$refs.todoItem.forEach(elem => {
+                    elem.rootTodoRotate = 0;
+                })
+            }, 30);
         }
     },
     created(){
         
     },
     mounted(){
-        this.$refs.todoList.addEventListener('scroll', this.handleScroll);
+
     }
 }
 </script>
@@ -399,17 +425,100 @@ export default {
     }
 
     .todo_list{
-        display: flex;
-        gap: 100px;
+        display: block;
+        position: relative;
         list-style-type: none;
         width: 100%;
         height:700px;
-        overflow-x: auto;
+        overflow-x: scroll;
         overflow-y: hidden;
+        text-wrap: nowrap;
+        left: 0px;
 
         &::-webkit-scrollbar{
             display: none;
         }
+    }
+
+    /* .fade-move{
+        transition: .1s;
+    }
+
+    .fade-enter-active{
+        transition: opacity .1s linear .2s, left .2s linear .2s;
+        opacity: 0;
+        left: 100px;
+    }
+
+    .fade-enter{
+        transform: scale(2);
+        opacity: 0;
+        left: 100px;
+    }
+
+    .fade-enter-to{
+        transform: scale(1);
+        opacity: 1;
+        left: 0px;
+    }
+
+    .fade-leave-active {
+        transition: opacity .2s, right .2s;
+        opacity: 1;
+        right: 0px;
+    }
+    
+    .fade-leave{
+        opacity: 1;
+        right: 0px;
+    }
+    
+    .fade-leave-to{
+        opacity: 0;
+        right: 100px;
+    } */
+
+
+    .fade-move,
+    .fade-enter-active,
+    .fade-leave-active {
+        transition: all 0.5s cubic-bezier(0.55, 0, 0.1, 1);
+    }
+
+    .fade-enter-from,
+    .fade-leave-to {
+        opacity: 0;
+        transform: translate(30px, 0px);
+    }
+
+    .fade-leave-active {
+        position: absolute;
+    }
+
+    .upDown-leave-active {
+        transition: all 0.2s;
+        opacity: 1;
+        top: 100px;
+    }
+
+    .upDown-leave-to {
+        opacity: 0;
+        top: 120px;
+    }
+
+    .upDown-enter-active{
+        transition: all 0.2s linear 0.2s;
+        opacity: 0;
+        top: 40px;
+    }
+    
+    .upDown-enter{
+        top: 40px;
+    }
+
+    .upDown-enter-to{
+        opacity: 1;
+        top: 100px;
     }
 
     .mod_modal{

@@ -1,4 +1,5 @@
 const connection = require('../../config/db');
+const todoDao = require('./todoDao');
 
 exports.addGroup = (req, res) => {
     const { grpNm, userId, grpColor } = req.body;
@@ -131,10 +132,10 @@ exports.removeGroup = async (req, res) => {
         const sql = 'DELETE FROM TB_GRP WHERE GRP_SEQ=?';
         connection.query(sql, [
             grpSeq
-        ], (err, result) => {
+        ], async (err, result) => {
             if(err) throw err;
-    
-            if(result.affectedRows > 0 && removeUserGrpRel(grpSeq)){
+
+            if(result.affectedRows > 0 && await removeUserGrpRel(grpSeq) && await todoDao.removeAllTodoItem(grpSeq)){
                 res.send({
                     success: true,
                     message: '그룹을 삭제했습니다.',

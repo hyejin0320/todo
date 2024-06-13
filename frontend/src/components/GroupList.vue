@@ -39,7 +39,7 @@ export default {
             ],
             addBtn: {
                 key: -1,
-                grpColor: '#94AFC5',
+                grpColor: getRandomColor(),
                 grpNm: '새 그룹',
                 grpIcon: 'plus',
                 selected: false,
@@ -65,12 +65,10 @@ export default {
                     this.addBtn.grpColor = getRandomColor(this.addBtn.grpColor);
                     this.addBtn.selected = false;
                     key = newGrpSeq;
-                    console.log(key)
                 }
             }
 
             //그룹 선택 처리
-            console.log(key)
             const selectedIndex = this.groupList.findIndex(item => item.key === key);
             this.groupList[selectedIndex].selected = true;
 
@@ -78,7 +76,9 @@ export default {
             const bgColor = result[0].grpColor;
             document.body.style.backgroundColor = bgColor;
 
-            this.$emit('getTodoList', key);
+            //그룹 이동 시 Todo 리스트 애니메이션 삭제
+            
+            this.$emit('getTodoList', key, 'upDown');
         },
         async addGroup(newGroupData){
             try{
