@@ -128,7 +128,10 @@ export default {
 
                     console.log(res)
                     if(res.data.success){
-                        this.$emit('setTodoItem', this.todoSeq, this.todoText);
+                        const todoInfo = {
+                            text: this.todoText
+                        }
+                        this.$emit('setTodoItem', this.todoSeq, todoInfo);
                     }else{
                         console.log(res.data.message);
                     }

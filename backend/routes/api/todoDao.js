@@ -3,7 +3,7 @@ const connection = require('../../config/db');
 exports.getTodoList = (req, res) => {
     const { grpSeq } = req.query;
     console.log(grpSeq);
-    const sql = 'SELECT GRP_SEQ AS grpSeq, REG_DT AS regDt, TODO_COLOR AS bgColor, TODO_ISCOMP AS isComp, TODO_SEQ AS `key`, TODO_TEXT AS text, CHECKOUT_LINE AS chkoutLine, TODO_CATEGORY AS category, USER_ID AS userId FROM TB_TODO WHERE GRP_SEQ=? ORDER BY REG_DT DESC';
+    const sql = 'SELECT TODO.GRP_SEQ AS grpSeq, TODO.REG_DT AS regDt, TODO.TODO_COLOR AS bgColor, TODO.TODO_ISCOMP AS isComp, TODO.TODO_SEQ AS `key`, TODO.TODO_TEXT AS text, TODO.CHECKOUT_LINE AS chkoutLine, TODO.USER_ID AS userId, TODO.CATEGORY_SEQ AS ctgSeq, CTG.CATEGORY_NM AS ctgNm, CTG.CATEGORY_COLOR AS ctgColor FROM tb_todo TODO LEFT JOIN tb_category CTG ON TODO.CATEGORY_SEQ = CTG.CATEGORY_SEQ WHERE TODO.GRP_SEQ=? ORDER BY TODO.REG_DT DESC';
     connection.query(sql, [
         grpSeq
     ], (err, result) => {
@@ -43,7 +43,7 @@ exports.addTodo = (req, res) => {
 
 function getTodoDeatil(todoSeq){
     return new Promise((resolve, reject) => {
-        const sql = 'SELECT GRP_SEQ AS grpSeq, REG_DT AS regDt, TODO_COLOR AS bgColor, TODO_ISCOMP AS isComp, TODO_SEQ AS `key`, TODO_TEXT AS text, CHECKOUT_LINE AS chkoutLine, TODO_CATEGORY AS category, USER_ID AS userId FROM TB_TODO WHERE TODO_SEQ=?';
+        const sql = 'SELECT GRP_SEQ AS grpSeq, REG_DT AS regDt, TODO_COLOR AS bgColor, TODO_ISCOMP AS isComp, TODO_SEQ AS `key`, TODO_TEXT AS text, CHECKOUT_LINE AS chkoutLine, CATEGORY_SEQ AS ctgSeq, USER_ID AS userId FROM TB_TODO WHERE TODO_SEQ=?';
         connection.query(sql, [
             todoSeq
         ], (err, result) => {

@@ -179,3 +179,79 @@ function removeUserGrpRel(grpSeq){
         });
     });
 }
+
+exports.getCategoryList = (req, res) => {
+    const { grpSeq } = req.query;
+    const sql ='SELECT CATEGORY_SEQ AS `key`, CATEGORY_NM AS ctgNm, CATEGORY_COLOR AS ctgColor, REG_DT AS regDt, USER_ID AS userId, GRP_SEQ AS grpSeq FROM TB_CATEGORY WHERE GRP_SEQ=?';
+    connection.query(sql, [
+        grpSeq
+    ], (err, result) => {
+        if(err) throw err;
+
+        res.send({
+            success: true,
+            ctgList: result,
+        });
+    });
+}
+
+exports.addCategory = (req, res) => {
+    const { grpSeq, userId } = req.body;
+    console.log(grpSeq, userId)
+    const sql = 'INSERT INTO TB_CATEGORY(GRP_SEQ, USER_ID, REG_DT) VALUES(?,?,NOW())';
+    connection.query(sql, [
+        grpSeq, userId
+    ], (err, result) => {
+        if(err) throw err;
+
+        if(result.affectedRows){
+            getLastInsertedCategorySeq(req, res);
+        }else{
+            res.send({
+                success: false,
+                message: '카테고리를 추가할 수 없습니다.',
+            });
+        }
+    });
+}
+
+function getLastInsertedCategorySeq(req, res){
+    const { userId } = req.body;
+    const sql = 'SELECT CATEGORY_SEQ FROM TB_CATEGORY WHERE USER_ID=? ORDER BY REG_DT DESC LIMIT 1';
+    connection.query(sql, [
+        userId
+    ], async (err, result) => {
+        if(err) throw err;
+
+        console.log(result)
+        res.send({
+            success: true,
+            response: result[0].CATEGORY_SEQ,
+        });
+    });
+}
+
+exports.setCategoryDetail = (req, res) => {
+    const { ctgSeq, ctgNm } = req.body;
+    const sql = 'UPDATE TB_CATEGORY SET CATEGORY_NM=? WHERE CATEGORY_SEQ=?';
+    connection.query(sql, [
+        ctgNm, ctgSeq
+    ], (err, result) => {
+        if(err) throw err;
+
+        if(result.affectedRows > 0){
+            res.send({
+                success: true,
+            })
+        }else{
+            res.send({
+                success: false,
+                response: '카테고리 명을 변경할 수 없습니다.',
+            })
+        }
+    });
+}
+
+exports.removeCategory = (req, res) => {
+
+}

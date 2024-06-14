@@ -6,6 +6,7 @@
             @openModGroupModal="openModGroupModal" 
             @openDelGroupModal="openDelGroupModal"
             @getTodoList="getTodoList"
+            @getCategoryList="getCategoryList"
         ></GroupList>
     </div>
     <div class="wrapper"
@@ -13,11 +14,20 @@
         @dragover.prevent="dragOverEvent($event)"
         @drop.prevent="dropEvent($event)"
     >
-    <v-card
-              class="mx-auto"
-              max-width="344"
-              :class="{ 'draggableClass': show }"
-            >asdf</v-card>
+        <transition-group :name="transitionNm" tag="ul" class="ctg_list">
+            <CategoryItem
+                v-for="ctg in ctgList"
+                :key="ctg.key"
+                :ctgItem="ctg"
+                @setCategoryItem="setCategoryItem"
+                @delCategoryItem="delCategoryItem"
+            ></CategoryItem>
+            <CategoryItem
+                :key="-1"
+                :ctgItem="ctgAddBtn"
+                @click="addCategory"
+            ></CategoryItem>
+        </transition-group>
         <transition-group :name="transitionNm" tag="ul" class="todo_list" @scroll="handleScroll">
             <TodoItem 
                 v-for="todo in todoList" 
@@ -83,6 +93,7 @@
 import AppHeader from '@/components/common/AppHeader.vue';
 import GroupList from '@/components/GroupList.vue';
 import TodoItem from '@/components/TodoItem.vue';
+import CategoryItem from '@/components/CategoryItem.vue';
 import { getSession } from '@/utils/session.js';
 import { getColorSet } from '@/utils/colorSet';
 export default {
@@ -90,11 +101,13 @@ export default {
         AppHeader,
         GroupList,
         TodoItem,
+        CategoryItem,
     },
     data(){
         return{
             todoList: [],
             colorList: getColorSet(),
+            ctgList: [],
             grpSeq: '',
             grpNm: '',
             grpColor: '',
@@ -105,6 +118,10 @@ export default {
             scrollTimeOut: null,
             prevScrollLeft: 0,
             transitionNm: 'upDown',
+            ctgAddBtn: {
+                key: -1,
+                ctgNm: '새 카테고리',
+            },
         }
     },
     computed: {
@@ -237,9 +254,18 @@ export default {
                 console.error(err);
             }
         },
-        setTodoItem(todoSeq, todoText){
+        setTodoItem(todoSeq, updateInfo, deleteInfo){
             const todoIndex = this.todoList.findIndex(item => item.key === todoSeq);
-            this.todoList[todoIndex].text = todoText;
+            if(updateInfo){
+                if(updateInfo.text) this.todoList[todoIndex].text = updateInfo.text;
+                if(updateInfo.category) this.todoList[todoIndex].category = updateInfo.category;
+            }
+
+            if(deleteInfo){
+                deleteInfo.forEach((elem) => {
+                    this.todoList[todoIndex][elem] = null;
+                });
+            }
         },
         delTodoItem(todoSeq){
             const todoIndex = this.todoList.findIndex(item => item.key === todoSeq);
@@ -252,6 +278,53 @@ export default {
             this.colorList[afterColorIndex].activated = true;
             document.body.style.backgroundColor = color;
             this.$refs.groupListComponent.setGroupItem(this.grpSeq, null, color);
+        },
+        async getCategoryList(key){
+            try{
+                const res = await this.$axios.get('/api/group/category/list', {
+                    params:{
+                        grpSeq: key,
+                    }
+                });
+
+                if(res.data.success){
+                    this.ctgList = res.data.ctgList;
+                }else{
+                    console.error(res.data.message);
+                }
+            }catch(err){
+                console.error(err);
+            }
+        },
+        async addCategory(){
+            try{
+                const res = await this.$axios.post('/api/group/category/add',{
+                    userId: getSession('userId'),
+                    grpSeq: this.grpSeq,
+                });
+
+                if(res.data.success){
+                    this.ctgList.push({
+                        key: res.data.response
+                    });
+                }else{
+                    this.alertModal = true;
+                    this.alertModalContent = res.data.message;
+                }
+            }catch(err){
+                console.error(err);
+            }
+        },
+        setCategoryItem(ctgSeq, ctgInfo){
+            const ctgIndex = this.ctgList.findIndex(item => item.key === ctgSeq);
+
+            if(ctgInfo){
+                if(ctgInfo.ctgNm) this.ctgList[ctgIndex].text = ctgInfo.ctgNm;
+            }
+        },
+        delCategoryItem(ctgSeq){
+            const ctgIndex = this.ctgList.findIndex(item => item.key === ctgSeq);
+            this.ctgList.splice(ctgIndex, 1);
         },
         handleScroll(e){
             const scrollLeft =  e.target.scrollLeft;
@@ -277,8 +350,8 @@ export default {
             }, 30);
         },
         dragStartEvent(e){
-            console.log(e.target)
-            e.dataTransfer.setData('text/plain', e.target);
+            console.dir(e.target)
+            e.dataTransfer.setData('draggedTarget', e.target.closest('.todo_item').__vnode.props.key);
         },
         dragOverEvent(){
 
@@ -287,14 +360,17 @@ export default {
             if(!e.target.closest('.todo_item')){
                 console.log('밖');
             }else{
-                const data = event.dataTransfer.getData('text/plain');
-                console.log(data)
+                const draggedTarget = e.dataTransfer.getData('draggedTarget');
                 const dropedElemKey = e.target.closest('.todo_item').__vnode.props.key;
                 console.log(dropedElemKey);
-                // const info = {
-                //     category: 
-                // }
-                // this.setTodoItem(dropedElemKey, info);
+                const updateInfo = {
+                    category: e.target.closest('.todo_item').__vnode.props.category,
+                }
+
+                const deleteInfo = ['category']
+
+                this.setTodoItem(draggedTarget, null, deleteInfo);
+                this.setTodoItem(dropedElemKey, updateInfo);
             }
         }
     },
@@ -454,15 +530,33 @@ export default {
         }
     }
 
-    .todo_list{
+    .ctg_list{
         display: block;
         position: relative;
         list-style-type: none;
         width: 100%;
-        height:700px;
+        overflow-x: scroll;
+        overflow-y: hidden;
+        white-space: nowrap;
+        top:30px;
+        padding: 10px 70px;
+        font-size: 0px;
+
+        &::-webkit-scrollbar{
+            display: none;
+        } 
+    }
+
+    .todo_list{
+        display: block;
+        position: absolute;
+        list-style-type: none;
+        width: 100%;
+        min-height:700px;
         overflow-x: scroll;
         overflow-y: hidden;
         text-wrap: nowrap;
+        top: 240px;
         left: 0px;
 
         &::-webkit-scrollbar{

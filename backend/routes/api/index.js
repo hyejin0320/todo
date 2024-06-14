@@ -14,6 +14,10 @@ router.post('/api/group/add', groupDao.addGroup);
 router.get('/api/group/detail', groupDao.getGroupDetail);
 router.post('/api/group/modify', groupDao.setGroupDetail);
 router.post('/api/group/delete', groupDao.removeGroup);
+router.get('/api/group/category/list', groupDao.getCategoryList);
+router.post('/api/group/category/add', groupDao.addCategory);
+router.post('/api/group/category/modify', groupDao.setCategoryDetail);
+router.post('/api/group/category/delete', groupDao.removeCategory);
 
 router.get('/api/todo/list', todoDao.getTodoList);
 router.post('/api/todo/add', todoDao.addTodo);

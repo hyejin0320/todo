@@ -77,8 +77,8 @@ export default {
             document.body.style.backgroundColor = bgColor;
 
             //그룹 이동 시 Todo 리스트 애니메이션 삭제
-            
             this.$emit('getTodoList', key, 'upDown');
+            this.$emit('getCategoryList', key);
         },
         async addGroup(newGroupData){
             try{
