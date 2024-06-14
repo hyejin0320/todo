@@ -8,7 +8,16 @@
             @getTodoList="getTodoList"
         ></GroupList>
     </div>
-    <div class="wrapper">
+    <div class="wrapper"
+        @dragstart="dragStartEvent($event)"
+        @dragover.prevent="dragOverEvent($event)"
+        @drop.prevent="dropEvent($event)"
+    >
+    <v-card
+              class="mx-auto"
+              max-width="344"
+              :class="{ 'draggableClass': show }"
+            >asdf</v-card>
         <transition-group :name="transitionNm" tag="ul" class="todo_list" @scroll="handleScroll">
             <TodoItem 
                 v-for="todo in todoList" 
@@ -266,6 +275,27 @@ export default {
                     elem.rootTodoRotate = 0;
                 })
             }, 30);
+        },
+        dragStartEvent(e){
+            console.log(e.target)
+            e.dataTransfer.setData('text/plain', e.target);
+        },
+        dragOverEvent(){
+
+        },
+        dropEvent(e){
+            if(!e.target.closest('.todo_item')){
+                console.log('밖');
+            }else{
+                const data = event.dataTransfer.getData('text/plain');
+                console.log(data)
+                const dropedElemKey = e.target.closest('.todo_item').__vnode.props.key;
+                console.log(dropedElemKey);
+                // const info = {
+                //     category: 
+                // }
+                // this.setTodoItem(dropedElemKey, info);
+            }
         }
     },
     created(){

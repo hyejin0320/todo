@@ -1,9 +1,14 @@
 <template lang="">
-    <li class="todo_item" :key="todoItem.key" :style="{transform: 'rotate('+rootTodoRotate+'deg)'}">
+    <li 
+        class="todo_item" 
+        :key="todoItem.key" 
+        :style="{transform: 'rotate('+rootTodoRotate+'deg)'}"
+    >
         <!-- 핀 랜덤 배치.. -->
         <!-- <label class="chk_pin" :style="{left: randomDistance(0, 200)+'px', top: randomDistance(-60, -40)+'px'}"> -->
         <div draggable="true"
             class="category_tag" 
+            :class="{isMoved: isMovedCategory}"
             :style="{transform: 'rotate('+categoryTagRotate+'deg)'}" 
             v-if="todoItem.category"
             @dragstart="categoryTagDragStartEvent($event)"
@@ -74,6 +79,7 @@ export default {
             nameTagRotate: this.randomDeg(4),
             todoText: this.todoItem.text,
             isReadMode: true,
+            isMovedCategory: false,
         }
     },
     methods:{
@@ -133,17 +139,12 @@ export default {
 
             this.toggleMode();
         },
-        categoryTagDragStartEvent(e){
-            e.target.classList.add('isMoved');
+        categoryTagDragStartEvent(){
+            this.isMovedCategory = true;
         },
-        categoryTagDragEndEvent(e){
-            // console.dir(e)
-            console.log('offset: ', e.offsetX, e.offsetY)
-            console.log('page: ', e.pageX, e.pageY)
-            console.log('screen: ', e.screenX, e.screenY)
-            // if((e.offsetX > 50 || e.offsetX < -77) && (e.offsetY > 100|| e.offsetY < 100))
-            e.target.classList.remove('isMoved');
-        }
+        categoryTagDragEndEvent(){
+            this.isMovedCategory = false;
+        },
     }
 }
 </script>
@@ -398,16 +399,21 @@ export default {
         box-shadow: 4px 4px rgba(0,0,0, .3);
         border-radius: 6px;
         transform: rotate(10deg);
+        cursor: grab;
 
         &.isMoved{
             opacity: .5;
+            cursor: grab;
+
+            &:active{
+                cursor: grabbing;
+            }
         }
 
         .category_tag_content{
             width: 100%;
             display: flex;
             flex-direction: row;
-            cursor: pointer;
 
             .category_tag_text{
                 display: flex;

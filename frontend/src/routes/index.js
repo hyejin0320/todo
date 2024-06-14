@@ -28,6 +28,11 @@ const router = createRouter({
             beforeEnter: onlyAuthUser,
         },
         {
+            path: '/test',
+            component: () => import('@/views/TestPage.vue'),
+            beforeEnter: onlyAuthUser,
+        },
+        {
             path: '/:catchAll(.*)',
             component: () => import('@/views/NotFoundPage.vue'),
         }
