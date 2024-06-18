@@ -111,6 +111,54 @@ exports.setTodoItem = (req, res) => {
     })
 };
 
+exports.setTodoCategory = async (req, res) => {
+    const { beforeTodoSeq, afterTodoSeq, ctgSeq } = req.body;
+
+    if(!beforeTodoSeq){
+        const result = await changeCategory(afterTodoSeq, ctgSeq);
+    
+        if(result){
+            res.send({
+                success: true,
+                message: '성공',
+            });
+        }else{
+            res.send({
+                success: false,
+                message: '실패', 
+            })
+        }
+    }else{
+        const result1 = await changeCategory(beforeTodoSeq, null);
+        const result2 = await changeCategory(afterTodoSeq, ctgSeq);
+
+        if(result1 && result2){
+            res.send({
+                success: true,
+                message: '성공',
+            });
+        }else{
+            res.send({
+                success: false,
+                message: '실패', 
+            })
+        }
+    }
+}
+
+function changeCategory(todoSeq, ctgSeq){
+    return new Promise((resolve, reject) => {
+        const sql = 'UPDATE TB_TODO SET CATEGORY_SEQ=? WHERE TODO_SEQ=?';
+        connection.query(sql, [
+            ctgSeq, todoSeq
+        ], (err, result) => {
+            if(err) throw err;
+    
+            resolve(result.affectedRows > 0);
+        });
+    });
+};
+
 exports.removeAllTodoItem = (grpSeq) => {
     return new Promise((resolve, reject) => {
         const sql = 'DELETE FROM TB_TODO WHERE GRP_SEQ=?';
@@ -119,6 +167,33 @@ exports.removeAllTodoItem = (grpSeq) => {
         ], (err, result) => {
             if(err) throw err;
     
+            resolve(result.affectedRows > 0);
+        });
+    });
+};
+
+exports.getTodoCountRelatedCategory = (ctgSeq) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT COUNT(*) AS cnt FROM TB_TODO WHERE CATEGORY_SEQ=?';
+        connection.query(sql, [
+            ctgSeq
+        ], (err, result) => {
+            if(err) throw reject(err);
+            
+            resolve(result[0].cnt);
+        });
+    });
+}
+
+exports.removeAllTodoRelatedCategory = (ctgSeq) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'DELETE FROM TB_TODO WHERE CATEGORY_SEQ=?';
+        connection.query(sql, [
+            ctgSeq
+        ], (err, result) => {
+            if(err) throw reject(err);
+
+            console.log(result.affectedRows)
             resolve(result.affectedRows > 0);
         });
     });

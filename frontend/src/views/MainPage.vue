@@ -17,6 +17,7 @@
         <transition-group :name="transitionNm" tag="ul" class="ctg_list">
             <CategoryItem
                 v-for="ctg in ctgList"
+                :data-key="ctg.key"
                 :key="ctg.key"
                 :ctgItem="ctg"
                 @setCategoryItem="setCategoryItem"
@@ -28,21 +29,36 @@
                 @click="addCategory"
             ></CategoryItem>
         </transition-group>
-        <transition-group :name="transitionNm" tag="ul" class="todo_list" @scroll="handleScroll">
+        <transition-group 
+            :name="transitionNm" 
+            tag="ul" 
+            class="todo_list" 
+            @scroll="handleScroll"
+        >
             <TodoItem 
                 v-for="todo in todoList" 
                 :key="todo.key" 
+                :data-key="todo.key"
                 :todoItem="todo" 
                 @setTodoItem="setTodoItem" 
                 @delTodoItem="delTodoItem"
                 ref="todoItem"
             ></TodoItem>
         </transition-group>
-        <div class="member_list">MEMBER</div>
+        <div class="member_list"
+            @click="showMemberList"
+        >MEMBER</div>
         <div class="btn_add_todo"
             @click="addTodo"
         >CREATE NEW TODO</div>
 
+        <div class="member_modal" :class="{activated: memberModal}">
+            <div></div>
+            <div class="del_modal_btns">
+                <button class="btn_no" @click="closeDelGroupModal">안됨</button>
+                <button class="btn_yes" @click="delGroup">OK</button>
+            </div>
+        </div>
         <div class="mod_modal group_modal" :class="{activated: modGroupModal}">
             <div class="mod_modal_color_set">
                 <label 
@@ -108,9 +124,11 @@ export default {
             todoList: [],
             colorList: getColorSet(),
             ctgList: [],
+            memberList: [],
             grpSeq: '',
             grpNm: '',
             grpColor: '',
+            memberModal: false,
             modGroupModal: false,
             delGroupModal: false,
             alertModal: false,
@@ -126,7 +144,7 @@ export default {
     },
     computed: {
         isVisibledModal(){
-            return this.modGroupModal || this.delGroupModal || this.alertModal;
+            return this.memberModal || this.modGroupModal || this.delGroupModal || this.alertModal;
         }
     },
     methods:{
@@ -209,6 +227,7 @@ export default {
             this.alertModal = false;
         },
         closeModal(){
+            if(this.memberModal) this.closeMemberModal();
             if(this.modGroupModal) this.closeModGroupModal();
             if(this.delGroupModal) this.closeDelGroupModal();
             if(this.alertModal) this.closeAlertModal();
@@ -255,10 +274,20 @@ export default {
             }
         },
         setTodoItem(todoSeq, updateInfo, deleteInfo){
-            const todoIndex = this.todoList.findIndex(item => item.key === todoSeq);
+            const todoIndex = this.todoList.findIndex(item => item.key === parseInt(todoSeq));
+
             if(updateInfo){
                 if(updateInfo.text) this.todoList[todoIndex].text = updateInfo.text;
-                if(updateInfo.category) this.todoList[todoIndex].category = updateInfo.category;
+                if(updateInfo.ctgSeq != null) {
+                    if(updateInfo.ctgSeq == -1){
+                        this.todoList[todoIndex].ctgSeq = null;
+                        this.todoList[todoIndex].ctgNm = null;
+                    }else{
+                        this.todoList[todoIndex].ctgSeq = updateInfo.ctgSeq;
+                        this.todoList[todoIndex].ctgNm = updateInfo.ctgNm;
+                    }
+                    
+                }
             }
 
             if(deleteInfo){
@@ -317,18 +346,28 @@ export default {
         },
         setCategoryItem(ctgSeq, ctgInfo){
             const ctgIndex = this.ctgList.findIndex(item => item.key === ctgSeq);
+            if(ctgInfo.ctgNm) this.ctgList[ctgIndex].ctgNm = ctgInfo.ctgNm;
 
-            if(ctgInfo){
-                if(ctgInfo.ctgNm) this.ctgList[ctgIndex].text = ctgInfo.ctgNm;
-            }
+            console.log(ctgInfo)
+            const todoIndex = this.todoList.map((item, index) => (item.ctgSeq === ctgSeq ? index : -1)).filter(index => index !== -1);
+            todoIndex.forEach(elem => {
+                console.log(elem)
+                this.todoList[elem].ctgNm = ctgInfo.ctgNm;
+                this.todoList[elem].ctgColor = ctgInfo.ctgColor;
+            });
         },
         delCategoryItem(ctgSeq){
             const ctgIndex = this.ctgList.findIndex(item => item.key === ctgSeq);
             this.ctgList.splice(ctgIndex, 1);
+
+            this.todoList.forEach((elem, index) => {
+                if(elem.ctgSeq === ctgSeq){
+                    this.todoList.splice(index, 1);
+                }
+            })
         },
         handleScroll(e){
             const scrollLeft =  e.target.scrollLeft;
-            console.log(scrollLeft, e.target.scrollWidth)
             let scrollRotate = 0;
             if(this.prevScrollLeft < scrollLeft) scrollRotate = -10;
             else scrollRotate = 10;
@@ -350,28 +389,127 @@ export default {
             }, 30);
         },
         dragStartEvent(e){
-            console.dir(e.target)
-            e.dataTransfer.setData('draggedTarget', e.target.closest('.todo_item').__vnode.props.key);
+            e.dataTransfer.setData('draggedTarget', e.target.closest('li').getAttribute('data-key'));
+            if(e.target.closest('li').classList.value === 'ctg_item'){
+                e.dataTransfer.setData('draggedType', 'ctg');
+            }else{
+                e.dataTransfer.setData('draggedType', 'todo');
+            }
         },
         dragOverEvent(){
 
         },
-        dropEvent(e){
+        async dropEvent(e){
             if(!e.target.closest('.todo_item')){
                 console.log('밖');
+                const draggedTarget = e.dataTransfer.getData('draggedTarget');
+                const draggedType = e.dataTransfer.getData('draggedType');
+                console.log('draggedTarget: ', draggedTarget)
+                console.log('draggedType: ', draggedType)
+
+                if(draggedType === 'todo'){
+                    try{
+                        const res = await this.$axios.post('/api/todo/category/modify', {
+                            afterTodoSeq: draggedTarget,
+                            ctgSeq: null,
+                        });
+
+                        if(res.data.success){
+                            this.setTodoItem(draggedTarget, {ctgSeq: -1});
+                        }else{
+                            this.delGroupModal = false;
+                            this.alertModal = true;
+                            this.alertModalContent = res.data.message;
+                        }
+                    }catch(err){
+                        console.error(err.data.message);
+                    }
+                }
             }else{
                 const draggedTarget = e.dataTransfer.getData('draggedTarget');
-                const dropedElemKey = e.target.closest('.todo_item').__vnode.props.key;
-                console.log(dropedElemKey);
-                const updateInfo = {
-                    category: e.target.closest('.todo_item').__vnode.props.category,
+                const draggedType = e.dataTransfer.getData('draggedType');
+                const dropedElemKey = e.target.closest('.todo_item').getAttribute('data-key');
+                console.log('draggedTarget: ', draggedTarget)
+                console.log('draggedType: ', draggedType)
+                console.log('dropedElemKey: ', dropedElemKey);
+
+                //카테고리 -> todo
+                if(draggedType === 'ctg'){
+                    try{
+                        const targetCtg = this.ctgList.find((elem) =>  elem.key === parseInt(draggedTarget));
+                        console.log(targetCtg)
+                        const res = await this.$axios.post('/api/todo/category/modify', {
+                            afterTodoSeq: dropedElemKey,
+                            ctgSeq: targetCtg.key
+                        });
+
+                        if(res.data.success){
+                            const updateInfo = {
+                                ctgSeq: targetCtg.key,
+                                ctgNm: targetCtg.ctgNm,
+                            }
+                            console.log(updateInfo)
+
+                            this.setTodoItem(dropedElemKey, updateInfo);   
+                        }else{
+                            this.delGroupModal = false;
+                            this.alertModal = true;
+                            this.alertModalContent = res.data.message;
+                        }
+                    }catch(err){
+                        console.error(err.data.message);
+                    }
+                }else{//todo -> todo
+                    if(draggedTarget !== dropedElemKey){
+                        try{
+                            const targetTodo = this.todoList.find((elem) => elem.key === parseInt(draggedTarget));
+                            const res = await this.$axios.post('/api/todo/category/modify', {
+                                beforeTodoSeq: draggedTarget,
+                                afterTodoSeq: dropedElemKey,
+                                ctgSeq: targetTodo.ctgSeq,
+                            });
+
+                            if(res.data.success){
+                                const updateInfo = {
+                                    ctgSeq: targetTodo.ctgSeq,
+                                    ctgNm: targetTodo.ctgNm,
+                                };
+
+                                this.setTodoItem(dropedElemKey, updateInfo);
+                                this.setTodoItem(draggedTarget, {ctgSeq: -1});
+                            }else{
+                                this.delGroupModal = false;
+                                this.alertModal = true;
+                                this.alertModalContent = res.data.message;
+                            }
+                        }catch(err){
+                            console.error(err.data.message);
+                        }
+                    }
                 }
-
-                const deleteInfo = ['category']
-
-                this.setTodoItem(draggedTarget, null, deleteInfo);
-                this.setTodoItem(dropedElemKey, updateInfo);
             }
+        },
+        async showMemberList(){
+            console.log('memberList')
+            try{
+                const res = await this.$axios.get('/api/group/user/list', {
+                    params: {
+                        grpSeq: this.grpSeq,
+                    }
+                });
+                
+                if(res.data.success){
+                    this.memberList = res.data.memberList;
+                    this.memberModal = true;
+                }else{
+                    console.error(res.data.message);
+                }
+            }catch(err){
+                console.error(err);
+            }
+        },
+        closeMemberModal(){
+            this.memberModal = false;
         }
     },
     created(){
@@ -463,7 +601,7 @@ export default {
         position: absolute;
         bottom: -30px;
         right: 80px;
-        z-index: 120;
+        z-index: 100;
         align-self:flex-end;
 
         width: 500px;
@@ -531,16 +669,19 @@ export default {
     }
 
     .ctg_list{
+        align-self: flex-start;
         display: block;
         position: relative;
         list-style-type: none;
-        width: 100%;
         overflow-x: scroll;
         overflow-y: hidden;
         white-space: nowrap;
-        top:30px;
-        padding: 10px 70px;
+        bottom: 330px;
+        margin: 0px 100px;
+        padding: 10px 0px;
         font-size: 0px;
+        width: calc(100% - 200px);
+        z-index: 30;
 
         &::-webkit-scrollbar{
             display: none;
@@ -643,6 +784,21 @@ export default {
     .upDown-enter-to{
         opacity: 1;
         top: 100px;
+    }
+
+    .member_modal{
+        z-index: 110;
+        background-color: #fff;
+        box-shadow: 10px 10px rgba(0,0,0, .3);
+
+        transform: translateY(1200px) rotate(-30deg);
+        transition-property: transform;
+        transition-duration: .8s;
+        transition-timing-function: ease;
+
+        &.activated{
+            transform: translateY(-180px) rotate(3deg);
+        }
     }
 
     .mod_modal{

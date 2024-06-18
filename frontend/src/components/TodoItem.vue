@@ -10,13 +10,13 @@
             class="category_tag" 
             :class="{isMoved: isMovedCategory}"
             :style="{transform: 'rotate('+categoryTagRotate+'deg)'}" 
-            v-if="todoItem.category"
+            v-if="todoItem.ctgSeq"
             @dragstart="categoryTagDragStartEvent($event)"
             @dragend="categoryTagDragEndEvent($event)"
         >
             <div class="category_tag_content">
                 <div class="category_tag_text">
-                    {{todoItem.category}}
+                    {{todoItem.ctgNm}}
                 </div>
                 <div class="category_tag_color">
                     
@@ -54,7 +54,7 @@
         <p class="todo_text read_mode" v-if="isReadMode" @click="toggleMode">
             {{todoItem.text}}
         </p>
-        <textarea class="todo_text write_mode" v-if="!isReadMode" v-model="todoText" @focusout="changeTodoText" ref="todoTextInput" maxlength="72"></textarea>
+        <textarea class="todo_text write_mode" v-if="!isReadMode" v-model="todoText" @focusout="changeTodoText" ref="todoTextInput" maxlength="200"></textarea>
         <p class="todo_regDt">
             2024.06.12 (수) 00:00
             <!-- {{todoItem.regDt}} -->
@@ -280,29 +280,37 @@ export default {
     .todo_text{
 
         white-space: pre-wrap;
+        overflow-y: auto;
+
+        &::-webkit-scrollbar {
+            width: 6px;  
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #ddd; /* 스크롤바 막대 색상 */
+            border-radius: 12px 12px 12px 12px;
+        }
 
         &.read_mode{
             font-family: "Gowun Dodum", sans-serif;
-            font-size: 20px;
+            font-size: 18px;
             position:relative;
             top: 54px;
             left:0px;
             height: 174px;
-            overflow: hidden;
             overflow-wrap: anywhere;
             cursor: text;
         }
 
         &.write_mode{
             font-family: "Gowun Dodum", sans-serif;
-            font-size: 20px;
+            font-size: 18px;
             position:relative;
             top: 51px;
             left:-3px;
             width: calc(100% + 10px);
             height: 174px;
             resize: none;
-            overflow: hidden;
             box-sizing: border-box;
 
             &:focus{
@@ -422,9 +430,7 @@ export default {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                flex-grow: 2.5;
-
-                width: min-content;
+                width: 102px;
                 height: 50px;
 
                 background-color: #eee;

@@ -1,5 +1,7 @@
 const connection = require('../../config/db');
 const todoDao = require('./todoDao');
+const userDao = require('./userDao');
+const jwt = require('./../../utils/jwt');
 
 exports.addGroup = (req, res) => {
     const { grpNm, userId, grpColor } = req.body;
@@ -68,6 +70,9 @@ exports.getGroupList = (req, res) => {
         userId
     ], (err, result) => {
         if(err) throw err;
+
+        //임시
+        jwt.createToken(userId);
 
         console.log(result);
         res.send({
@@ -242,6 +247,10 @@ exports.setCategoryDetail = (req, res) => {
         if(result.affectedRows > 0){
             res.send({
                 success: true,
+                ctgInfo: {
+                    ctgSeq: ctgSeq,
+                    ctgNm: ctgNm,
+                } 
             })
         }else{
             res.send({
@@ -253,5 +262,47 @@ exports.setCategoryDetail = (req, res) => {
 }
 
 exports.removeCategory = (req, res) => {
+    const { ctgSeq } = req.body;
+    const sql = 'DELETE FROM TB_CATEGORY WHERE CATEGORY_SEQ=?';
 
+    connection.query(sql, [
+        ctgSeq,
+    ], async (err, result) => {
+        if(err) throw err;
+        let isRemoveTodo = true;
+        if(await todoDao.getTodoCountRelatedCategory(ctgSeq) > 0){
+            isRemoveTodo = await todoDao.removeAllTodoRelatedCategory(ctgSeq)
+        }
+        console.log(isRemoveTodo)
+
+        if(result.affectedRows > 0 && isRemoveTodo){
+            res.send({
+                success: true,
+                ctgSeq: ctgSeq,
+            });
+        }else{
+            res.send({
+                success: false,
+                message: '카테고리를 삭제할 수 없습니다.',
+            });
+        }
+    })
+}
+
+exports.getUserListFromGroup = async (req, res) => {
+    const { grpSeq } = req.query;
+
+    const userList = await userDao.getUserListFromGroup(grpSeq);
+    
+    if(userList.length > 0){
+        res.send({
+            success: true,
+            userList: userList,
+        });
+    }else{
+        res.send({
+            success: false,
+            message: '맴버 목록을 불러올 수 없습니다.',
+        });
+    }
 }

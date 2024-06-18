@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "@mdi/font": "5.9.55",
+    "jsonwebtoken": "^9.0.2",
     "roboto-fontface": "*",
+    "vuex-persistedstate": "^4.1.0",
     "webfontloader": "^1.0.0"
   },
   "devDependencies": {

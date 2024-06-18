@@ -1,4 +1,5 @@
 import { createStore } from 'vuex';
+import createPersistedState from 'vuex-persistedstate';
 import axios from 'axios';
 
 export default createStore({
@@ -20,6 +21,7 @@ export default createStore({
 		setUserInfo(state, userData){
 			state.userId = userData.userId;
 			state.userNm = userData.userNm;
+			state.token = userData.token;
 		},
 	},
 	actions: { //호출로 상태가 변경되는 비동기적 메서드 정의
@@ -31,8 +33,9 @@ export default createStore({
 			axios.post('http://localhost:3000/api/login', 
 				userData
 			).then((res) => {
-				if(res.data.scuess){
-					const resUserData = res.data.response[0];
+				if(res.data.success){
+					const resUserData = res.data.response;
+					console.log(resUserData)
 					commit('setUserInfo', resUserData);	
 				}
 
@@ -43,6 +46,12 @@ export default createStore({
 	getters: { //상태를 조회/가공하여 새로운 값 반환
 		getUserId(state){
 			return state.userId;
+		},
+		getUserNm(state){
+			return state.userNm;
 		}
 	},
+	plugins: [createPersistedState({
+		paths: ['userId', 'userNm', 'token']
+	})]
 });

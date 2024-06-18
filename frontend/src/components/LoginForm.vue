@@ -12,15 +12,17 @@
                 <v-icon class="input_inner_icon" :icon="isSeenPw" @click="togglePwSeen"></v-icon>
             </label>
             <button type="submit" class="btn btn_type_1" :disabled="isDisabled">접속</button>
-            <button type="button" @click="signUp" class="btn btn_type_2">계정 등록</button>
+            <div>
+                <button type="button" @click="signUp" class="btn btn_type_2">계정 등록</button>
+                <div class="flex-row remember_id_checkbox">
+                    <label class="flex-row input_checkbox">
+                        <input type="checkbox" v-model="saveId">
+                        <i></i>
+                        <span>ID 기억하기</span>
+                    </label>
+                </div>
+            </div>
         </form>
-        <div class="flex-row remember_id_checkbox">
-            <label class="flex-row input_checkbox">
-                <input type="checkbox" v-model="saveId">
-                <i></i>
-                <span>ID 기억하기</span>
-            </label>
-        </div>
     </div>
 </template>
 <script>
@@ -78,6 +80,6 @@ export default {
 </script>
 <style lang="scss">
     .remember_id_checkbox{
-        margin-top: 20px;
+        margin-top: 30px;
     }
 </style>

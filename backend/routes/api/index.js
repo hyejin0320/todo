@@ -18,10 +18,12 @@ router.get('/api/group/category/list', groupDao.getCategoryList);
 router.post('/api/group/category/add', groupDao.addCategory);
 router.post('/api/group/category/modify', groupDao.setCategoryDetail);
 router.post('/api/group/category/delete', groupDao.removeCategory);
+router.get('/api/group/user/list', groupDao.getUserListFromGroup);
 
 router.get('/api/todo/list', todoDao.getTodoList);
 router.post('/api/todo/add', todoDao.addTodo);
 router.post('/api/todo/delete', todoDao.removeTodoItem);
 router.post('/api/todo/modify', todoDao.setTodoItem);
+router.post('/api/todo/category/modify', todoDao.setTodoCategory);
 
 module.exports = router;

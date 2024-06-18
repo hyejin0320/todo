@@ -41,7 +41,7 @@ exports.login = (req, res) => {
         if(result.length > 0){
             res.send({
                 success: true,
-                response: result
+                response: result[0]
             });
         }else{
             res.send({
@@ -52,5 +52,18 @@ exports.login = (req, res) => {
                 },
             });
         }
+    });
+}
+
+exports.getUserListFromGroup = (grpSeq) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT USER.USER_ID AS userId, USER.USER_NM AS userNm FROM TB_USER_GRP_REL REL LEFT JOIN TB_USER USER ON REL.USER_ID = USER.USER_ID WHERE REL.GRP_SEQ=?'
+        connection.query(sql, [
+            grpSeq,
+        ], (err, result) => {
+            if(err) throw reject(err);
+    
+            resolve(result);
+        });
     });
 }

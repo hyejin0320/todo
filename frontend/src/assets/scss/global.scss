@@ -23,8 +23,11 @@ html, body, button, input, ul, li, p{
     padding-top: 168px;
     height: calc(100% - 168px);
     overflow: hidden;
+    justify-content: center;
+    align-items: center;
 
     &.login{
+        justify-content: center;
         padding-top: unset;
         height: 100%
     }
